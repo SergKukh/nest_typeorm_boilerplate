@@ -98,6 +98,7 @@ jobs:
                 --restart unless-stopped \
                 -e NODE_ENV=staging \
                 -e PORT=3000 \
+                -p 3000:3000 \
                 -e DB_HOST \
                 -e DB_PASSWORD \
                 -e REDIS_PASSWORD \
