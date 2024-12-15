@@ -23,19 +23,6 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Delete old images from ECR
-        run: |
-          # Get the list of image digests in the repository
-          images=$(aws ecr describe-images --repository-name ${{ secrets.STAGING_AWS_ECR_REPOSITORY }} --query 'imageIds[*].imageDigest' --output text)
-          
-          # If there are images, delete them
-          if [ -n "$images" ]; then
-            echo "Deleting old images: $images"
-            aws ecr batch-delete-image --repository-name ${{ secrets.STAGING_AWS_ECR_REPOSITORY }} --image-ids imageDigest=$images
-          else
-            echo "No images found in ECR to delete."
-          fi
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
