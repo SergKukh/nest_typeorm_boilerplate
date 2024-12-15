@@ -46,7 +46,6 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('api');
   app.useBodyParser('json', { limit: REQUEST_ENTITY_SIZE_LIMIT });
-  app.use(helmet());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -73,6 +72,8 @@ async function bootstrap(): Promise<void> {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
 
   SwaggerModule.setup(swaggerPath, app, document);
+
+  app.use(helmet());
 
   await app.listen(port);
 }
