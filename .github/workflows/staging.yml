@@ -97,7 +97,7 @@ jobs:
                 --network backend_dev \
                 --restart unless-stopped \
                 -e NODE_ENV=staging \
-                -e PORT \
+                -e PORT=3000 \
                 -e DB_HOST \
                 -e DB_PASSWORD \
                 -e REDIS_PASSWORD \
