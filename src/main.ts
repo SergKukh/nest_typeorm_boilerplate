@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import helmet from 'helmet';
+// import helmet from 'helmet';
 import { AppModule } from 'app.module';
 import { AppService } from 'app.service';
 import type { Env } from 'environment/environment.type';
@@ -46,7 +46,7 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('api');
   app.useBodyParser('json', { limit: REQUEST_ENTITY_SIZE_LIMIT });
-  app.use(helmet());
+  // app.use(helmet());
 
   app.useGlobalPipes(
     new ValidationPipe({
