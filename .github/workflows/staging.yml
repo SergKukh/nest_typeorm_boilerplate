@@ -1,0 +1,120 @@
+name: CI/CD Staging
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+jobs:
+  buildAndPublishToECR:
+    name: Build and Publish to AWS ECR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.STAGING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.STAGING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.STAGING_AWS_ECR_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build, tag, and push image to Amazon ECR
+        uses: docker/build-push-action@v5
+        env:
+          AWS_ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          AWS_ECR_REPOSITORY: ${{ secrets.STAGING_AWS_ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        with:
+          context: .
+          platforms: linux/arm64,linux/amd64
+          push: true
+          tags: '${{ env.AWS_ECR_REGISTRY }}/${{ env.AWS_ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}'
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deployToEC2:
+    name: Deploy to AWS EC2
+    needs: buildAndPublishToECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.STAGING_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.STAGING_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.STAGING_AWS_ECR_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.STAGING_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.STAGING_AWS_SECRET_ACCESS_KEY }}
+          AWS_ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          AWS_ECR_REPOSITORY: ${{ secrets.STAGING_AWS_ECR_REPOSITORY }}
+          AWS_ECR_REGION: ${{ secrets.STAGING_AWS_EC2_REGION }}
+          IMAGE_TAG: ${{ github.sha }}
+          DB_HOST: ${{ secrets.STAGING_DB_HOST }}
+          DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+          REDIS_PASSWORD: ${{ secrets.STAGING_REDIS_PASSWORD }}
+          SMTP_HOST: ${{ secrets.STAGING_SMTP_HOST }}
+          SMTP_USER: ${{ secrets.STAGING_SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.STAGING_SMTP_PASSWORD }}
+          SMTP_PORT: ${{ secrets.STAGING_SMTP_PORT }}
+          SMTP_FROM: ${{ secrets.STAGING_SMTP_FROM }}
+          FRONTEND_URL: ${{ secrets.STAGING_FRONTEND_URL }}
+          JWT_SECRET: ${{ secrets.STAGING_JWT_SECRET }}
+
+        with:
+          host: ${{ secrets.STAGING_AWS_EC2_HOST }}
+          port: ${{ secrets.STAGING_AWS_EC2_SSH_PORT }}
+          username: ${{ secrets.STAGING_AWS_EC2_USERNAME }}
+          key: ${{ secrets.STAGING_AWS_EC2_SSH_KEY }}
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ECR_REGISTRY,AWS_ECR_REPOSITORY,AWS_ECR_REGION,IMAGE_TAG,DB_HOST,DB_PASSWORD,REDIS_PASSWORD,SMTP_HOST,SMTP_USER,SMTP_PASSWORD,SMTP_PORT,SMTP_FROM,FRONTEND_URL,JWT_SECRET
+          script: |
+            aws ecr get-login-password --region $AWS_ECR_REGION | docker login --username AWS --password-stdin $AWS_ECR_REGISTRY
+            docker stop backend_dev redis || true
+            docker rm backend_dev redis || true
+            docker image prune --all --force
+            docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+            docker network create backend_dev || true
+            docker run -d \
+                --name backend_dev \
+                --network backend_dev \
+                --restart unless-stopped \
+                -e NODE_ENV=staging \
+                -e PORT \
+                -e DB_HOST \
+                -e DB_PASSWORD \
+                -e REDIS_PASSWORD \
+                -e SMTP_HOST \
+                -e SMTP_USER \
+                -e SMTP_PASSWORD \
+                -e SMTP_PORT \
+                -e SMTP_FROM \
+                -e FRONTEND_URL \
+                -e JWT_SECRET \
+                -e AWS_ACCESS_KEY_ID \
+                -e AWS_SECRET_ACCESS_KEY \
+                $AWS_ECR_REGISTRY/$AWS_ECR_REPOSITORY:$IMAGE_TAG
+            docker run -d \
+                --name redis \
+                --network backend_dev \
+                --restart unless-stopped \
+                --mount source=redis-data,target=/data \
+                redis:7.2.4 \
+                redis-server --requirepass $REDIS_PASSWORD --save 60 1 --loglevel warning
