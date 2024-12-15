@@ -70,6 +70,7 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           DB_HOST: ${{ secrets.STAGING_DB_HOST }}
           DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+          REDIS_HOST: ${{secrets.STAGING_REDIS_HOST}}
           REDIS_PASSWORD: ${{ secrets.STAGING_REDIS_PASSWORD }}
           SMTP_HOST: ${{ secrets.STAGING_SMTP_HOST }}
           SMTP_USER: ${{ secrets.STAGING_SMTP_USER }}
@@ -84,7 +85,7 @@ jobs:
           port: ${{ secrets.STAGING_AWS_EC2_SSH_PORT }}
           username: ${{ secrets.STAGING_AWS_EC2_USERNAME }}
           key: ${{ secrets.STAGING_AWS_EC2_SSH_KEY }}
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ECR_REGISTRY,AWS_ECR_REPOSITORY,AWS_ECR_REGION,IMAGE_TAG,DB_HOST,DB_PASSWORD,REDIS_PASSWORD,SMTP_HOST,SMTP_USER,SMTP_PASSWORD,SMTP_PORT,SMTP_FROM,FRONTEND_URL,JWT_SECRET
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ECR_REGISTRY,AWS_ECR_REPOSITORY,AWS_ECR_REGION,IMAGE_TAG,DB_HOST,DB_PASSWORD,REDIS_HOST,REDIS_PASSWORD,SMTP_HOST,SMTP_USER,SMTP_PASSWORD,SMTP_PORT,SMTP_FROM,FRONTEND_URL,JWT_SECRET
           script: |
             aws ecr get-login-password --region $AWS_ECR_REGION | docker login --username AWS --password-stdin $AWS_ECR_REGISTRY
             docker stop backend_dev redis || true
@@ -101,6 +102,7 @@ jobs:
                 -p 3000:3000 \
                 -e DB_HOST \
                 -e DB_PASSWORD \
+                -e REDIS_HOST \
                 -e REDIS_PASSWORD \
                 -e SMTP_HOST \
                 -e SMTP_USER \
