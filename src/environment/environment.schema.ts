@@ -29,4 +29,8 @@ export const environmentSchema = z.object({
   JWT_REFRESH_TOKEN_EXPIRE_IN: ZOD_MS_TYPE.default('15d'),
   RESET_PASSWORD_TOKEN_EXPIRE_IN: ZOD_MS_TYPE.default('1d'),
   RESET_PASSWORD_TOKEN_RESEND_IN: ZOD_MS_TYPE.default('30s'),
+  AWS_ACCESS_KEY_ID: z.string(),
+  AWS_SECRET_ACCESS_KEY: z.string(),
+  AWS_S3_REGION: z.string(),
+  AWS_S3_BUCKET: z.string(),
 });

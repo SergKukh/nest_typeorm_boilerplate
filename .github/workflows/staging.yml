@@ -64,6 +64,8 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.STAGING_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.STAGING_AWS_SECRET_ACCESS_KEY }}
+          AWS_S3_REGION: ${{ secrets.STAGING_AWS_S3_REGION }}
+          AWS_S3_BUCKET: ${{ secrets.STAGING_AWS_S3_BUCKET }}
           AWS_ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           AWS_ECR_REPOSITORY: ${{ secrets.STAGING_AWS_ECR_REPOSITORY }}
           AWS_ECR_REGION: ${{ secrets.STAGING_AWS_ECR_REGION }}
@@ -85,7 +87,7 @@ jobs:
           port: ${{ secrets.STAGING_AWS_EC2_SSH_PORT }}
           username: ${{ secrets.STAGING_AWS_EC2_USERNAME }}
           key: ${{ secrets.STAGING_AWS_EC2_SSH_KEY }}
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_ECR_REGISTRY,AWS_ECR_REPOSITORY,AWS_ECR_REGION,IMAGE_TAG,DB_HOST,DB_PASSWORD,REDIS_HOST,REDIS_PASSWORD,SMTP_HOST,SMTP_USER,SMTP_PASSWORD,SMTP_PORT,SMTP_FROM,FRONTEND_URL,JWT_SECRET
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_S3_REGION,AWS_S3_BUCKET,AWS_ECR_REGISTRY,AWS_ECR_REPOSITORY,AWS_ECR_REGION,IMAGE_TAG,DB_HOST,DB_PASSWORD,REDIS_HOST,REDIS_PASSWORD,SMTP_HOST,SMTP_USER,SMTP_PASSWORD,SMTP_PORT,SMTP_FROM,FRONTEND_URL,JWT_SECRET
           script: |
             aws ecr get-login-password --region $AWS_ECR_REGION | docker login --username AWS --password-stdin $AWS_ECR_REGISTRY
             docker stop backend_dev redis || true
@@ -113,6 +115,8 @@ jobs:
                 -e JWT_SECRET \
                 -e AWS_ACCESS_KEY_ID \
                 -e AWS_SECRET_ACCESS_KEY \
+                -e AWS_S3_REGION \
+                -e AWS_S3_BUCKET \
                 $AWS_ECR_REGISTRY/$AWS_ECR_REPOSITORY:$IMAGE_TAG
             docker run -d \
                 --name redis \

@@ -10,7 +10,7 @@ import { PostRecoverPasswordDto } from 'modules/auth/dto/post-recover-password.d
 import { PostResetPasswordDto } from 'modules/auth/dto/post-reset-password.dto';
 
 @Controller('auth')
-@ApiTags(AuthController.name)
+@ApiTags('Auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,

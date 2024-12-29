@@ -25,6 +25,8 @@ module.exports = {
     '@typescript-eslint/no-shadow': 'error',
     'import/prefer-default-export': 'off',
     'class-methods-use-this': 'off',
+    'no-underscore-dangle': 'off',
+    'no-param-reassign': 'off',
     'import/no-extraneous-dependencies': 'off',
     'padding-line-between-statements': [
       'error',

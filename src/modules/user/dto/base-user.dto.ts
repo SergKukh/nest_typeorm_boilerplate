@@ -3,9 +3,11 @@ import { Expose } from 'class-transformer';
 import { randomUUID } from 'crypto';
 import { UserEntity } from 'database/entities/user.entity';
 
-export class UserShortResponseDto {
+export class BaseUserDto {
   constructor(data: UserEntity) {
     Object.assign(this, data);
+
+    this.profileImage = data.profileImage || null;
   }
 
   @Expose()
@@ -23,4 +25,12 @@ export class UserShortResponseDto {
   @Expose()
   @ApiProperty({ example: 'Doe' })
   lastName: string;
+
+  @Expose()
+  @ApiProperty({ example: 'https://example.com/user/image.png' })
+  profileImage: string | null;
+
+  @Expose()
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
+  createdAt: Date;
 }

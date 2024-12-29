@@ -1,9 +1,10 @@
 import { ConfigService } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { AppModule } from 'app.module';
 import { AppService } from 'app.service';
 import type { Env } from 'environment/environment.type';
@@ -46,6 +47,7 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('api');
   app.useBodyParser('json', { limit: REQUEST_ENTITY_SIZE_LIMIT });
+  app.use(cookieParser());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -54,6 +56,12 @@ async function bootstrap(): Promise<void> {
       validateCustomDecorators: false,
       exceptionFactory: (errors): ValidationException =>
         new ValidationException(errors),
+    }),
+  );
+
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(app.get(Reflector), {
+      excludeExtraneousValues: true,
     }),
   );
 

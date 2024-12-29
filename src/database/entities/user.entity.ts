@@ -2,7 +2,7 @@ import { Column, Entity } from 'typeorm';
 import { BaseEntity } from 'database/entities/base.entity';
 
 @Entity('user')
-export abstract class UserEntity extends BaseEntity {
+export class UserEntity extends BaseEntity {
   @Column({ nullable: false, unique: true })
   email: string;
 
@@ -17,4 +17,14 @@ export abstract class UserEntity extends BaseEntity {
 
   @Column({ nullable: true })
   imageKey: string;
+
+  private _profileImage: string | null;
+
+  get profileImage(): string | null {
+    return this._profileImage;
+  }
+
+  set profileImage(url: string | null) {
+    this._profileImage = url;
+  }
 }

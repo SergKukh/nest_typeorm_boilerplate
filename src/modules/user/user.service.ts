@@ -7,11 +7,13 @@ import { AuthPasswordService } from 'modules/auth/auth-password.service';
 import { UserAlreadyExistsException } from 'modules/user/exceptions/user-already-exists.exception';
 import { UserNotFoundException } from 'modules/user/exceptions/user-not-found.exception';
 import { UpdateUserData } from 'modules/user/types/update-user-data.type';
+import { StorageService } from 'modules/storage/storage.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly authPasswordService: AuthPasswordService,
+    private readonly storageService: StorageService,
 
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
@@ -21,6 +23,16 @@ export class UserService {
     options: FindOneOptions<UserEntity>,
   ): Promise<UserEntity | null> {
     const user = await this.userRepository.findOne(options);
+
+    if (!user) return null;
+
+    return this.processUserData(user);
+  }
+
+  async processUserData(user: UserEntity): Promise<UserEntity> {
+    user.profileImage = user.imageKey
+      ? await this.storageService.getSignedUrl(user.imageKey)
+      : null;
 
     return user;
   }
@@ -80,5 +92,28 @@ export class UserService {
     });
 
     return this.getUserByIdOrFail(userId);
+  }
+
+  async updateProfileImage(
+    user: UserEntity,
+    file: Express.Multer.File,
+  ): Promise<UserEntity> {
+    const { buffer, originalname } = file;
+
+    const fileKey = await this.storageService.upload(
+      `user/${user.id}/${originalname}`,
+      buffer,
+    );
+
+    if (user.imageKey) {
+      await this.storageService.delete(user.imageKey);
+    }
+
+    const updatedUser = await this.userRepository.save({
+      ...user,
+      imageKey: fileKey,
+    });
+
+    return this.getUserByIdOrFail(updatedUser.id);
   }
 }
