@@ -24,6 +24,14 @@ export class UserService {
   ): Promise<UserEntity | null> {
     const user = await this.userRepository.findOne(options);
 
+    return user;
+  }
+
+  async findUserAndProcessData(
+    options: FindOneOptions<UserEntity>,
+  ): Promise<UserEntity | null> {
+    const user = await this.findUser(options);
+
     if (!user) return null;
 
     return this.processUserData(user);
@@ -41,7 +49,10 @@ export class UserService {
     userId: string,
     options?: FindOneOptions<UserEntity>,
   ): Promise<UserEntity> {
-    const user = await this.findUser({ where: { id: userId }, ...options });
+    const user = await this.findUserAndProcessData({
+      where: { id: userId },
+      ...options,
+    });
 
     if (!user) throw new UserNotFoundException();
 
@@ -52,7 +63,7 @@ export class UserService {
     email: string,
     options?: FindOneOptions<UserEntity>,
   ): Promise<UserEntity> {
-    const user = await this.findUser({
+    const user = await this.findUserAndProcessData({
       where: { email: email.toLocaleLowerCase() },
       ...options,
     });

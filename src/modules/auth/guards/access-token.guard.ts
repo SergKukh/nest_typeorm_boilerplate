@@ -34,7 +34,9 @@ export class AccessTokenGuard implements CanActivate {
 
     if (tokenType !== AuthTokenType.ACCESS) throw new InvalidJwtTypeException();
 
-    const user = await this.userService.getUserByIdOrFail(userId);
+    const user = await this.userService.findUser({ where: { id: userId } });
+
+    if (!user) throw new UnauthorizedException();
 
     request.user = user;
 

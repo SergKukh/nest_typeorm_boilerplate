@@ -38,7 +38,9 @@ export class UserController {
     type: CurrentUserResponseDto,
   })
   async getUser(@User() user: UserEntity): Promise<CurrentUserResponseDto> {
-    return new CurrentUserResponseDto(user);
+    const currentUser = await this.userService.getUserByIdOrFail(user.id);
+
+    return new CurrentUserResponseDto(currentUser);
   }
 
   @Patch('profile-image')
